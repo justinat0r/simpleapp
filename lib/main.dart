@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 void main() {
@@ -53,8 +55,23 @@ class MyHomePage extends StatefulWidget {
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class _MyHomePageState extends State<MyHomePage>
+    with SingleTickerProviderStateMixin {
+  static const double _footballSize = 40;
+
   int _counter = 0;
+
+  // Drives the football's flight across the screen, looping forever.
+  late final AnimationController _kickController = AnimationController(
+    vsync: this,
+    duration: const Duration(seconds: 2),
+  )..repeat();
+
+  @override
+  void dispose() {
+    _kickController.dispose();
+    super.dispose();
+  }
 
   void _incrementCounter() {
     setState(() {
@@ -85,32 +102,57 @@ class _MyHomePageState extends State<MyHomePage> {
         // the App.build method, and use it to set our appbar title.
         title: Text(widget.title),
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: .center,
+      body: LayoutBuilder(
+        builder: (context, constraints) => Stack(
           children: [
-            const Text(
-              'Justin has pushed the button this many times:',
-              style: TextStyle(fontSize: 34),
+            Center(
+              // Center is a layout widget. It takes a single child and
+              // positions it in the middle of the parent.
+              child: Column(
+                // Column is also a layout widget. It takes a list of children
+                // and arranges them vertically. By default, it sizes itself to
+                // fit its children horizontally, and tries to be as tall as its
+                // parent.
+                //
+                // Column has various properties to control how it sizes itself
+                // and how it positions its children. Here we use
+                // mainAxisAlignment to center the children vertically; the main
+                // axis here is the vertical axis because Columns are vertical
+                // (the cross axis would be horizontal).
+                //
+                // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug
+                // Paint" action in the IDE, or press "p" in the console), to see
+                // the wireframe for each widget.
+                mainAxisAlignment: .center,
+                children: [
+                  const Text(
+                    'Justin has pushed the button this many times:',
+                    style: TextStyle(fontSize: 34),
+                  ),
+                  Text(
+                    '$_counter',
+                    style: Theme.of(context).textTheme.headlineMedium,
+                  ),
+                ],
+              ),
             ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+            // The football is kicked from the bottom-left, flies across the
+            // screen in an arc, and tumbles end over end.
+            AnimatedBuilder(
+              animation: _kickController,
+              builder: (context, child) {
+                final t = _kickController.value;
+                final ground = constraints.maxHeight - _footballSize;
+                return Positioned(
+                  left: -_footballSize +
+                      t * (constraints.maxWidth + _footballSize),
+                  top: ground - ground * 0.8 * 4 * t * (1 - t),
+                  child: Transform.rotate(angle: t * 4 * pi, child: child),
+                );
+              },
+              child: const IgnorePointer(
+                child: Icon(Icons.sports_football, size: _footballSize),
+              ),
             ),
           ],
         ),
